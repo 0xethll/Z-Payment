@@ -55,6 +55,7 @@ export default function WrapPanel({
     decryptedBalance,
     decrypt,
     isDecrypting,
+    refetch: refetchConfidentialBalance,
   } = useConfidentialBalanceFor({
     erc20Address: tokenAddress,
     autoDecrypt: false, // Manual decrypt on button click
@@ -81,6 +82,8 @@ export default function WrapPanel({
         delete newBalances[tokenAddress.toLowerCase()]
         return newBalances
       })
+
+      refetchConfidentialBalance()
 
       // Call parent callback
       if (onWrapSuccess && amount) {

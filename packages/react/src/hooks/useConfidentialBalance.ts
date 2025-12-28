@@ -280,7 +280,7 @@ export function useConfidentialBalanceFor({
 
   // Combined refetch function
   const refetch = useCallback(() => {
-    refetchWrapped()
+    // refetchWrapped()
     balanceQuery.refetch()
   }, [refetchWrapped, balanceQuery])
 
