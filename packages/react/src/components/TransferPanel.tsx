@@ -23,6 +23,7 @@ export default function TransferPanel({
   const [selectedToken, setSelectedToken] = useState(tokens[0]?.symbol || '')
   const [recipient, setRecipient] = useState('')
   const [amount, setAmount] = useState('')
+  const [isTransferring, setIsTransferring] = useState(false)
 
   // Get selected token config
   const selectedTokenConfig = useMemo(() => {
@@ -38,6 +39,7 @@ export default function TransferPanel({
     decryptedBalance,
     decrypt,
     isDecrypting,
+    error: decryptError,
   } = useConfidentialBalanceFor({
     erc20Address,
     autoDecrypt: false,
@@ -80,6 +82,13 @@ export default function TransferPanel({
     }
   }, [decryptedBalance, erc20Address])
 
+  // Reset transferring state on success
+  useEffect(() => {
+    if (isSuccess) {
+      setIsTransferring(false)
+    }
+  }, [isSuccess])
+
   // Get cached balance to display
   const displayBalance = cachedBalances[erc20Address?.toLowerCase()] ?? null
 
@@ -102,10 +111,14 @@ export default function TransferPanel({
       return
     }
 
+    setIsTransferring(true)
+
     try {
       await transfer(recipient as Address, amount)
     } catch (err) {
       console.error('Transfer error:', err)
+    } finally {
+      setIsTransferring(false)
     }
   }
 
@@ -207,13 +220,20 @@ export default function TransferPanel({
                 {selectedToken}
               </div>
             )}
-            <button
-              onClick={decrypt}
-              disabled={isDecrypting || !encryptedBalance || displayBalance !== null}
-              className="text-xs text-primary hover:underline mt-1 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isDecrypting ? '⏳ Decrypting...' : '🔓 Decrypt to view'}
-            </button>
+            <div>
+              <button
+                onClick={decrypt}
+                disabled={isDecrypting || !encryptedBalance || displayBalance !== null}
+                className="text-xs text-primary hover:underline mt-1 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isDecrypting ? '⏳ Decrypting...' : '🔓 Decrypt to view'}
+              </button>
+              {decryptError && (
+                <p className="text-[10px] text-red-600 dark:text-red-400 mt-1">
+                  {formatErrorMessage(decryptError)}
+                </p>
+              )}
+            </div>
           </>
         ) : (
           <div className="text-sm text-muted-foreground">Wrapper not deployed yet</div>
@@ -225,15 +245,21 @@ export default function TransferPanel({
         onClick={handleTransfer}
         disabled={
           isLoading ||
+          isTransferring ||
           !recipient ||
           !amount ||
           parseFloat(amount) <= 0 ||
           amountExceedsBalance ||
           displayBalance === null
         }
-        className="w-full px-4 py-3 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 disabled:from-muted disabled:to-muted text-primary-foreground rounded-dynamic-xl font-semibold text-sm transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:transform-none disabled:cursor-not-allowed flex items-center justify-center gap-2"
+        className="w-full px-4 py-3 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 disabled:from-muted disabled:to-muted text-primary-foreground disabled:text-muted-foreground rounded-dynamic-xl font-semibold text-sm transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:transform-none disabled:cursor-not-allowed flex items-center justify-center gap-2"
       >
-        {isLoading ? (
+        {isTransferring && !isLoading ? (
+          <>
+            <Loader2 className="w-4 h-4 animate-spin" />
+            Preparing...
+          </>
+        ) : isLoading ? (
           <>
             <Loader2 className="w-4 h-4 animate-spin" />
             Sending...

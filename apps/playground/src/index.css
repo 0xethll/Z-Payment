@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@source "../../../packages/react/src/**/*.{ts,tsx}";
 
 @theme {
   /* Dark theme colors using oklch format */
