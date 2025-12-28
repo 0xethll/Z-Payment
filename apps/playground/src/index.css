@@ -82,10 +82,10 @@ body {
 }
 
 .scrollbar-thin::-webkit-scrollbar-thumb {
-  background: oklch(0.27 0.02 265);
+  background: var(--color-border);
   border-radius: 3px;
 }
 
 .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-  background: oklch(0.64 0.18 286);
+  background: var(--color-primary);
 }

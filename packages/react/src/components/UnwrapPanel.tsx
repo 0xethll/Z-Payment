@@ -202,13 +202,13 @@ export default function UnwrapPanel({
               step="0.000001"
               min="0"
             />
-            {/* <button
+            <button
               onClick={() => setAmount(currentBalance.toString())}
               disabled={isLoading || currentBalance === 0 || displayBalance === null}
               className="absolute right-3 top-1/2 -translate-y-1/2 px-2 py-1 text-xs font-medium text-primary hover:bg-primary/10 rounded-dynamic transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               MAX
-            </button> */}
+            </button>
           </div>
           {/* Insufficient Balance Error */}
           {amountExceedsBalance && (
@@ -335,7 +335,7 @@ export default function UnwrapPanel({
           className="flex items-center justify-between w-full md:cursor-default"
         >
           <div className="flex items-center gap-2">
-            <h3 className="text-sm font-semibold">Pending Unwraps</h3>
+            <h3 className="text-xs font-semibold">Pending Unwraps</h3>
             {unwrapRequests && unwrapRequests.length > 0 && (
               <span className="px-2 py-0.5 text-xs font-medium bg-primary/10 text-primary rounded-full">
                 {unwrapRequests.length}

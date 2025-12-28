@@ -188,13 +188,13 @@ export default function WrapPanel({
             step="0.000001"
             min="0"
           />
-          {/* <button
+          <button
             onClick={() => setAmount(currentBalance.toString())}
             disabled={isLoading || currentBalance === 0}
             className="absolute right-3 top-1/2 -translate-y-1/2 px-2 py-1 text-xs font-medium text-primary hover:bg-primary/10 rounded-dynamic transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             MAX
-          </button> */}
+          </button>
         </div>
         {/* Insufficient Balance Error */}
         {amountExceedsBalance && (
