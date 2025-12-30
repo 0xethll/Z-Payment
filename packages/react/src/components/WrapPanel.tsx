@@ -234,7 +234,7 @@ export default function WrapPanel({
           <>
             {displayBalance !== null ? (
               <div className="text-lg font-bold font-mono">
-                {(Number(displayBalance) / 10 ** (selectedTokenConfig?.decimals || 6)).toFixed(4)}{' '}
+                {(Number(displayBalance) / 10 ** 6).toFixed(4)}{' '}
                 {getTokenPrefix('wrapped')}
                 {selectedToken}
               </div>

@@ -149,9 +149,8 @@ export default function UnwrapPanel({
   // Calculate current balance in human-readable format
   const currentBalance = useMemo(() => {
     if (displayBalance === null) return 0
-    const decimals = selectedTokenConfig?.decimals || 6
-    return Number(displayBalance) / 10 ** decimals
-  }, [displayBalance, selectedTokenConfig?.decimals])
+    return Number(displayBalance) / 10 ** 6
+  }, [displayBalance])
 
   // Check if amount exceeds balance
   const amountExceedsBalance = useMemo(() => {
@@ -187,7 +186,7 @@ export default function UnwrapPanel({
 
     const cached = cachedBalances[config.address.toLowerCase()]
     if (cached !== undefined && cached !== null) {
-      return (Number(cached) / 10 ** config.decimals).toFixed(4)
+      return (Number(cached) / 10 ** 6).toFixed(4)
     }
     return null // Not decrypted yet
   }
@@ -257,7 +256,7 @@ export default function UnwrapPanel({
                 <div className="text-lg font-bold font-mono">
                   {(
                     Number(displayBalance) /
-                    10 ** (selectedTokenConfig?.decimals || 6)
+                    10 ** 6
                   ).toFixed(4)}{' '}
                   {getTokenPrefix('wrapped')}
                   {selectedToken}
