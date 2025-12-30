@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { useTransfer } from '../hooks/useTransfer'
 import { useConfidentialBalanceFor } from '../hooks/useConfidentialBalance'
 import { Send, Loader2, CheckCircle2, AlertCircle, Lock } from 'lucide-react'
@@ -25,6 +25,9 @@ export default function TransferPanel({
   const [amount, setAmount] = useState('')
   const [isTransferring, setIsTransferring] = useState(false)
 
+  // Track the token address when decryption happens to prevent cache mismatches
+  const decryptedTokenRef = useRef<Address | null>(null)
+
   // Get selected token config
   const selectedTokenConfig = useMemo(() => {
     return tokens.find((t) => t.symbol === selectedToken)
@@ -37,13 +40,19 @@ export default function TransferPanel({
     isLoadingWrapped,
     encryptedBalance,
     decryptedBalance,
-    decrypt,
+    decrypt: originalDecrypt,
     isDecrypting,
     error: decryptError,
   } = useConfidentialBalanceFor({
     erc20Address,
     autoDecrypt: false,
   })
+
+  // Wrap decrypt to track which token was decrypted
+  const decrypt = useCallback(async () => {
+    decryptedTokenRef.current = erc20Address
+    await originalDecrypt()
+  }, [originalDecrypt, erc20Address])
 
   const tokenAddress = wrappedAddress as Address
 
@@ -72,15 +81,27 @@ export default function TransferPanel({
     },
   })
 
-  // Cache decrypted balance when it becomes available
+  // Reset ref when token changes
   useEffect(() => {
-    if (decryptedBalance !== null && erc20Address) {
+    decryptedTokenRef.current = null
+    setRecipient('')
+    setAmount('')
+  }, [selectedToken])
+
+  // Cache decrypted balance when it becomes available
+  // Only cache if the decrypted balance corresponds to the current token
+  useEffect(() => {
+    if (
+      decryptedBalance !== null &&
+      erc20Address &&
+      decryptedTokenRef.current?.toLowerCase() === erc20Address.toLowerCase()
+    ) {
       setCachedBalances((prev) => ({
         ...prev,
         [erc20Address.toLowerCase()]: decryptedBalance,
       }))
     }
-  }, [decryptedBalance, erc20Address])
+  }, [decryptedBalance, erc20Address, setCachedBalances])
 
   // Reset transferring state on success
   useEffect(() => {

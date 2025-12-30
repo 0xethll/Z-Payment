@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { useUnwrap } from '../hooks/useUnwrap'
 import { useConfidentialBalanceFor } from '../hooks/useConfidentialBalance'
 import { useUnwrapQueue } from '../hooks/useUnwrapQueue'
@@ -46,6 +46,9 @@ export default function UnwrapPanel({
   const [amount, setAmount] = useState('')
   const [isQueueExpanded, setIsQueueExpanded] = useState(true)
 
+  // Track the token address when decryption happens to prevent cache mismatches
+  const decryptedTokenRef = useRef<Address | null>(null)
+
   // Get selected token config
   const selectedTokenConfig = tokens.find((t) => t.symbol === selectedToken)
   const erc20Address = selectedTokenConfig?.address as Address
@@ -69,7 +72,7 @@ export default function UnwrapPanel({
     isLoadingWrapped,
     encryptedBalance,
     decryptedBalance,
-    decrypt,
+    decrypt: originalDecrypt,
     isDecrypting,
     error: decryptError,
     refetch: refetchBalance,
@@ -77,6 +80,12 @@ export default function UnwrapPanel({
     erc20Address,
     autoDecrypt: false,
   })
+
+  // Wrap decrypt to track which token was decrypted
+  const decrypt = useCallback(async () => {
+    decryptedTokenRef.current = erc20Address
+    await originalDecrypt()
+  }, [originalDecrypt, erc20Address])
 
   const tokenAddress = wrappedAddress as Address
 
@@ -113,15 +122,26 @@ export default function UnwrapPanel({
   // Asynchronously decrypt amounts for pending unwrap requests
   const decryptedCache = useDecryptedAmounts(unwrapRequests || [], fheInstance)
 
-  // Cache decrypted balance when it becomes available
+  // Reset ref when token changes
   useEffect(() => {
-    if (decryptedBalance !== null && erc20Address) {
+    decryptedTokenRef.current = null
+    setAmount('')
+  }, [selectedToken])
+
+  // Cache decrypted balance when it becomes available
+  // Only cache if the decrypted balance corresponds to the current token
+  useEffect(() => {
+    if (
+      decryptedBalance !== null &&
+      erc20Address &&
+      decryptedTokenRef.current?.toLowerCase() === erc20Address.toLowerCase()
+    ) {
       setCachedBalances((prev) => ({
         ...prev,
         [erc20Address.toLowerCase()]: decryptedBalance,
       }))
     }
-  }, [decryptedBalance, erc20Address])
+  }, [decryptedBalance, erc20Address, setCachedBalances])
 
   // Get cached balance to display
   const displayBalance = cachedBalances[erc20Address?.toLowerCase()] ?? null

@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react'
+import { useMemo, useState, useEffect, useRef, useCallback } from 'react'
 import { useWrapFlow } from '../hooks/useWrapFlow'
 import { useConfidentialBalanceFor } from '../hooks/useConfidentialBalance'
 import { useMultiTokenBalances } from '../hooks/useMultiTokenBalances'
@@ -24,6 +24,9 @@ export default function WrapPanel({
 }: WrapPanelProps) {
   const [selectedToken, setSelectedToken] = useState(tokens[0]?.symbol || '')
   const [amount, setAmount] = useState('')
+
+  // Track the token address when decryption happens to prevent cache mismatches
+  const decryptedTokenRef = useRef<Address | null>(null)
 
   const selectedTokenConfig = useMemo(() => {
     return tokens.find((t) => t.symbol === selectedToken)
@@ -53,7 +56,7 @@ export default function WrapPanel({
     isLoadingWrapped,
     encryptedBalance,
     decryptedBalance,
-    decrypt,
+    decrypt: originalDecrypt,
     isDecrypting,
     error: decryptError,
     refetch: refetchConfidentialBalance,
@@ -61,6 +64,12 @@ export default function WrapPanel({
     erc20Address: tokenAddress,
     autoDecrypt: false, // Manual decrypt on button click
   })
+
+  // Wrap decrypt to track which token was decrypted
+  const decrypt = useCallback(async () => {
+    decryptedTokenRef.current = tokenAddress
+    await originalDecrypt()
+  }, [originalDecrypt, tokenAddress])
 
   const {
     currentStep,
@@ -102,19 +111,25 @@ export default function WrapPanel({
   const txHash = wrapTx.hash
 
   // Cache decrypted balance when it becomes available
+  // Only cache if the decrypted balance corresponds to the current token
   useEffect(() => {
-    if (decryptedBalance !== null && tokenAddress) {
+    if (
+      decryptedBalance !== null &&
+      tokenAddress &&
+      decryptedTokenRef.current?.toLowerCase() === tokenAddress.toLowerCase()
+    ) {
       setCachedBalances((prev) => ({
         ...prev,
         [tokenAddress.toLowerCase()]: decryptedBalance,
       }))
     }
-  }, [decryptedBalance, tokenAddress])
+  }, [decryptedBalance, tokenAddress, setCachedBalances])
 
   // Reset flow state when token changes
   useEffect(() => {
     reset()
     setAmount('')
+    decryptedTokenRef.current = null // Clear ref to prevent stale balance caching
   }, [selectedToken, reset])
 
   // Get cached balance to display
